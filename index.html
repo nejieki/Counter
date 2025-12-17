@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>True Counter V3 (Fast)</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #e2e8f0;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-yellow: #eab308;
+            --input-bg: #334155;
+            --border-color: #475569;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--card-bg);
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            margin: 0;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        /* Dashboard Grid */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .stat-box {
+            background: var(--input-bg);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+        }
+
+        /* Input khusus buat Sisa Deck biar keliatan bisa diedit */
+        .editable-stat {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            width: 80%;
+            text-align: center;
+            border-radius: 8px;
+            padding: 5px;
+            transition: border 0.2s;
+        }
+        .editable-stat:focus {
+            outline: none;
+            border-color: var(--accent-green);
+            background: rgba(0,0,0,0.2);
+        }
+
+        .true-count-box {
+            grid-column: span 2;
+            background: #2d3748;
+            border: 2px solid var(--border-color);
+        }
+
+        .true-count-val {
+            font-size: 2.8rem;
+        }
+
+        /* Recommendation Box */
+        .recommendation {
+            text-align: center;
+            padding: 15px;
+            border-radius: 12px;
+            font-weight: bold;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        /* Input Area */
+        .input-section {
+            display: flex;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            background: var(--input-bg);
+            color: white;
+            font-size: 1.1rem;
+            outline: none;
+            border: 1px solid transparent;
+        }
+        input[type="text"]:focus {
+            border-color: var(--accent-green);
+            background: #0f172a; /* Lebih gelap dikit pas focus biar kerasa */
+        }
+
+        button {
+            padding: 15px 25px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+            transition: transform 0.1s;
+        }
+        button:active { transform: scale(0.98); }
+
+        .btn-add { background-color: var(--text-main); color: var(--bg-color); }
+        .btn-reset { 
+            background-color: var(--accent-red); 
+            color: white; 
+            margin-top: 10px;
+        }
+
+        /* History Log */
+        .log-container {
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+        
+        .log-header {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 5px;
+        }
+
+        .history-cards { font-family: monospace; color: var(--accent-yellow); }
+        .history-rc { font-weight: bold; }
+
+        /* Helpers */
+        .text-green { color: var(--accent-green); }
+        .text-red { color: var(--accent-red); }
+        .text-neutral { color: var(--text-main); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>♠️ True Counter V3 ♦️</h1>
+
+    <div class="dashboard">
+        <div class="stat-box">
+            <span class="stat-label">Running Count</span>
+            <span id="rcValue" class="stat-value">0</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">Sisa Deck (Edit Aja)</span>
+            <input type="number" id="decksLeftInput" class="editable-stat" value="6.0" step="0.1" onchange="manualDeckChange()">
+        </div>
+        <div class="stat-box true-count-box">
+            <span class="stat-label">TRUE COUNT</span>
+            <span id="tcValue" class="stat-value true-count-val">0.00</span>
+        </div>
+    </div>
+
+    <div id="recBox" class="recommendation">
+        >> Tunggu kartu keluar...
+    </div>
+
+    <div class="input-section">
+        <input type="text" id="cardInput" placeholder="Ketik gabung: k52a10j" autocomplete="off">
+        <button class="btn-add" onclick="processInput()">Input</button>
+    </div>
+
+    <div class="log-container">
+        <div class="log-header">
+            <span>Riwayat Kartu</span>
+            <span>Total: <span id="totalCardsSeen">0</span></span>
+        </div>
+        <ul id="historyList" class="history-list">
+        </ul>
+    </div>
+
+    <button class="btn-reset" onclick="resetGame()">RESET GAME</button>
+</div>
+
+<script>
+    let runningCount = 0;
+    let cardsSeenTotal = 0;
+
+    const rcEl = document.getElementById('rcValue');
+    const decksInput = document.getElementById('decksLeftInput');
+    const tcEl = document.getElementById('tcValue');
+    const recBox = document.getElementById('recBox');
+    const cardInput = document.getElementById('cardInput');
+    const historyList = document.getElementById('historyList');
+    const totalCardsEl = document.getElementById('totalCardsSeen');
+
+    cardInput.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") processInput();
+    });
+
+    // Logic Nilai Kartu
+    function getCardValue(card) {
+        card = card.toLowerCase().trim();
+        const highCards = ['10', 'j', 'q', 'k', 'a', 'jack', 'queen', 'king', 'ace'];
+        const lowCards = ['2', '3', '4', '5', '6'];
+        const neutralCards = ['7', '8', '9'];
+
+        if (highCards.includes(card)) return -1;
+        if (lowCards.includes(card)) return 1;
+        if (neutralCards.includes(card)) return 0;
+        return null;
+    }
+
+    function calculateStats() {
+        let currentDecks = parseFloat(decksInput.value);
+        if (currentDecks <= 0.1) currentDecks = 0.1;
+
+        const trueCount = runningCount / currentDecks;
+
+        rcEl.innerText = runningCount;
+        tcEl.innerText = trueCount.toFixed(2);
+
+        if (trueCount >= 1) tcEl.className = "stat-value true-count-val text-green";
+        else if (trueCount <= -1) tcEl.className = "stat-value true-count-val text-red";
+        else tcEl.className = "stat-value true-count-val text-neutral";
+
+        let msg = "", bg = "", color = "";
+        if (trueCount >= 3) {
+            msg = "🔥 GASPOLL!";
+            bg = "rgba(34, 197, 94, 0.2)"; color = "#4ade80";
+        } else if (trueCount >= 1) {
+            msg = "✅ Naikin Bet";
+            bg = "rgba(234, 179, 8, 0.2)"; color = "#facc15";
+        } else {
+            msg = "💤 Bet Minimum";
+            bg = "rgba(255, 255, 255, 0.05)"; color = "#e2e8f0";
+        }
+        recBox.innerText = msg;
+        recBox.style.backgroundColor = bg;
+        recBox.style.color = color;
+    }
+
+    function manualDeckChange() {
+        calculateStats();
+    }
+
+    function processInput() {
+        const rawInput = cardInput.value;
+        if (!rawInput) return;
+
+        // --- UPDATE LOGIC DI SINI ---
+        // Regex ini pinter: dia nyari '10' duluan, atau single digit 2-9, atau huruf j,q,k,a.
+        // Jadi 'k52a10j' otomatis kepecah jadi: k, 5, 2, a, 10, j
+        const cards = rawInput.match(/(10|[2-9jqka])/gi); 
+        
+        if (!cards) {
+            cardInput.value = ""; // Kalo input sampah doang, clear aja
+            return;
+        }
+
+        let roundRC = 0;
+        let validCount = 0;
+        let logText = "";
+
+        cards.forEach(card => {
+            const val = getCardValue(card);
+            if (val !== null) {
+                runningCount += val;
+                roundRC += val;
+                cardsSeenTotal++;
+                validCount++;
+                logText += card.toUpperCase() + " ";
+            }
+        });
+
+        if (validCount > 0) {
+            let currentDecks = parseFloat(decksInput.value);
+            let newDecks = currentDecks - (validCount / 52);
+            if (newDecks < 0) newDecks = 0;
+            decksInput.value = newDecks.toFixed(2);
+
+            const li = document.createElement("li");
+            li.className = "history-item";
+            li.innerHTML = `
+                <span class="history-cards">${logText}</span>
+                <span>RC Baru: <span class="history-rc">${runningCount}</span></span>
+            `;
+            historyList.appendChild(li); 
+            
+            const logContainer = document.querySelector('.log-container');
+            logContainer.scrollTop = logContainer.scrollHeight;
+
+            totalCardsEl.innerText = cardsSeenTotal;
+            calculateStats();
+        }
+
+        // --- UPDATE FOCUS DI SINI ---
+        cardInput.value = ""; // Kosongin input
+        cardInput.focus();    // Paksa cursor balik ke kotak input
+    }
+
+    function resetGame() {
+        runningCount = 0;
+        cardsSeenTotal = 0;
+        decksInput.value = "6.0";
+        rcEl.innerText = "0";
+        tcEl.innerText = "0.00";
+        totalCardsEl.innerText = "0";
+        historyList.innerHTML = "";
+        recBox.innerText = ">> Game Reset. Siap gas!";
+        recBox.style.backgroundColor = "rgba(255,255,255,0.05)";
+        recBox.style.color = "#e2e8f0";
+        calculateStats();
+        cardInput.focus(); // Pas reset juga balikin focus
+    }
+
+    calculateStats();
+    // Auto focus pas pertama kali buka
+    window.onload = function() {
+        cardInput.focus();
+    };
+
+</script>
+
+</body>
+</html>
