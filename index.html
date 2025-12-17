@@ -194,6 +194,22 @@
             overflow-y: auto;
             border: 1px solid var(--border-color);
         }
+
+        /* --- SCROLLBAR STYLE YANG BARU (DARK/SUBTLE) --- */
+        .log-container::-webkit-scrollbar {
+            width: 8px; /* Lebih tipis biar elegan */
+        }
+        .log-container::-webkit-scrollbar-track {
+            background: transparent; /* Track bening/gelap */
+        }
+        .log-container::-webkit-scrollbar-thumb {
+            background-color: #475569; /* Abu-abu gelap (Slate-600) */
+            border-radius: 4px;
+        }
+        .log-container::-webkit-scrollbar-thumb:hover {
+            background-color: #64748b; /* Terang dikit pas hover */
+        }
+        /* ------------------------------------- */
         
         .log-header {
             font-size: 0.85rem;
