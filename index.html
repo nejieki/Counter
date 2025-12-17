@@ -47,7 +47,6 @@
             border-bottom: 2px solid var(--border-color);
         }
 
-        /* Dashboard Grid */
         .dashboard {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -78,7 +77,6 @@
             font-weight: bold;
         }
 
-        /* Input khusus buat Sisa Deck biar keliatan bisa diedit */
         .editable-stat {
             background: transparent;
             border: 1px solid var(--border-color);
@@ -107,7 +105,6 @@
             font-size: 2.8rem;
         }
 
-        /* Recommendation Box */
         .recommendation {
             text-align: center;
             padding: 15px;
@@ -116,6 +113,33 @@
             background: rgba(255,255,255,0.05);
             border: 1px solid var(--border-color);
         }
+
+        /* BUTTON GROUP */
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn-tap {
+            padding: 20px 10px;
+            border-radius: 12px;
+            border: none;
+            color: white;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .btn-tap:active { transform: scale(0.95); }
+        .btn-tap span { font-size: 0.8rem; opacity: 0.8; font-weight: normal; }
+
+        .btn-low { background-color: var(--accent-green); }
+        .btn-mid { background-color: #64748b; }
+        .btn-high { background-color: var(--accent-red); }
 
         /* Input Area */
         .input-section {
@@ -136,25 +160,29 @@
         }
         input[type="text"]:focus {
             border-color: var(--accent-green);
-            background: #0f172a; /* Lebih gelap dikit pas focus biar kerasa */
+            background: #0f172a; 
         }
 
         button {
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-add { 
+            background-color: var(--text-main); 
+            color: var(--bg-color); 
             padding: 15px 25px;
             border-radius: 12px;
             border: none;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: transform 0.1s;
         }
-        button:active { transform: scale(0.98); }
-
-        .btn-add { background-color: var(--text-main); color: var(--bg-color); }
         .btn-reset { 
             background-color: var(--accent-red); 
             color: white; 
             margin-top: 10px;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            width: 100%;
         }
 
         /* History Log */
@@ -195,14 +223,9 @@
         .history-cards { font-family: monospace; color: var(--accent-yellow); }
         .history-rc { font-weight: bold; }
 
-        /* Helpers */
         .text-green { color: var(--accent-green); }
         .text-red { color: var(--accent-red); }
         .text-neutral { color: var(--text-main); }
-
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-color); }
-        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -216,7 +239,7 @@
             <span id="rcValue" class="stat-value">0</span>
         </div>
         <div class="stat-box">
-            <span class="stat-label">Sisa Deck (Edit Aja)</span>
+            <span class="stat-label">Sisa Deck</span>
             <input type="number" id="decksLeftInput" class="editable-stat" value="8.0" step="0.1" onchange="manualDeckChange()">
         </div>
         <div class="stat-box true-count-box">
@@ -229,14 +252,26 @@
         >> Tunggu kartu keluar...
     </div>
 
+    <div class="btn-group">
+        <button class="btn-tap btn-low" onclick="tapCard(1, 'LOW')">
+            LOW (-1)<span>(2 - 6)</span>
+        </button>
+        <button class="btn-tap btn-mid" onclick="tapCard(0, 'MID')">
+            MID (0)<span>(7 - 9)</span>
+        </button>
+        <button class="btn-tap btn-high" onclick="tapCard(-1, 'HIGH')">
+            HIGH (+1)<span>(10, Face, A)</span>
+        </button>
+    </div>
+
     <div class="input-section">
-        <input type="text" id="cardInput" placeholder="Ketik gabung: k52a10j" autocomplete="off">
+        <input type="text" id="cardInput" placeholder="0 = High, 1 = As" autocomplete="off">
         <button class="btn-add" onclick="processInput()">Input</button>
     </div>
 
     <div class="log-container">
         <div class="log-header">
-            <span>Riwayat Kartu</span>
+            <span>Riwayat</span>
             <span>Total: <span id="totalCardsSeen">0</span></span>
         </div>
         <ul id="historyList" class="history-list">
@@ -262,16 +297,114 @@
         if (event.key === "Enter") processInput();
     });
 
-    // Logic Nilai Kartu
+    // --- GAME STATE ---
+    function updateGameState(valueToAdd, logLabel, countToAdd = 1) {
+        runningCount += valueToAdd;
+        cardsSeenTotal += countToAdd;
+
+        let currentDecks = parseFloat(decksInput.value);
+        let newDecks = currentDecks - (countToAdd / 52);
+        if (newDecks < 0) newDecks = 0;
+        decksInput.value = newDecks.toFixed(2);
+
+        const li = document.createElement("li");
+        li.className = "history-item";
+        li.innerHTML = `
+            <span class="history-cards">${logLabel}</span>
+            <span>RC: <span class="history-rc">${runningCount}</span></span>
+        `;
+        historyList.appendChild(li); 
+        
+        const logContainer = document.querySelector('.log-container');
+        logContainer.scrollTop = logContainer.scrollHeight;
+
+        totalCardsEl.innerText = cardsSeenTotal;
+        calculateStats();
+    }
+
+    function tapCard(val, label) {
+        updateGameState(val, label, 1);
+        cardInput.focus(); 
+    }
+
+    // --- LOGIC KETIK ---
+    function processInput() {
+        const rawInput = cardInput.value;
+        if (!rawInput) return;
+
+        // REGEX BARU:
+        // Mencari angka 10, ATAU angka 0, ATAU angka 1-9, ATAU huruf jqka
+        const cards = rawInput.match(/(10|[0-9jqka])/gi); 
+        
+        if (!cards) {
+            cardInput.value = ""; 
+            return;
+        }
+
+        let roundRC = 0;
+        let validCount = 0;
+        let logText = "";
+
+        cards.forEach(card => {
+            const result = getCardValue(card);
+            if (result !== null) {
+                runningCount += result.val; 
+                roundRC += result.val;
+                cardsSeenTotal++;
+                validCount++;
+                logText += result.display + " "; // Pake nama display (misal ketik 0 muncul 10)
+            }
+        });
+
+        if (validCount > 0) {
+            let currentDecks = parseFloat(decksInput.value);
+            let newDecks = currentDecks - (validCount / 52);
+            if (newDecks < 0) newDecks = 0;
+            decksInput.value = newDecks.toFixed(2);
+
+            const li = document.createElement("li");
+            li.className = "history-item";
+            li.innerHTML = `
+                <span class="history-cards">${logText}</span>
+                <span>RC: <span class="history-rc">${runningCount}</span></span>
+            `;
+            historyList.appendChild(li);
+            
+            const logContainer = document.querySelector('.log-container');
+            logContainer.scrollTop = logContainer.scrollHeight;
+
+            totalCardsEl.innerText = cardsSeenTotal;
+            calculateStats();
+        }
+
+        cardInput.value = ""; 
+        cardInput.focus(); 
+    }
+
+    // --- MAPPING SHORTCUT ---
     function getCardValue(card) {
         card = card.toLowerCase().trim();
-        const highCards = ['10', 'j', 'q', 'k', 'a', 'jack', 'queen', 'king', 'ace'];
-        const lowCards = ['2', '3', '4', '5', '6'];
-        const neutralCards = ['7', '8', '9'];
 
-        if (highCards.includes(card)) return -1;
-        if (lowCards.includes(card)) return 1;
-        if (neutralCards.includes(card)) return 0;
+        // 1. INPUT 0 = 10/Face
+        if (card === '0' || card === '10' || ['j','q','k'].includes(card)) {
+            return { val: -1, display: '10' };
+        }
+        
+        // 2. INPUT 1 = As (Awas ketuker sama 10 kalo regex salah, tapi regex diatas aman)
+        if (card === '1' || card === 'a') {
+            return { val: -1, display: 'A' };
+        }
+
+        // 3. LOW CARDS (2-6)
+        if (['2','3','4','5','6'].includes(card)) {
+            return { val: 1, display: card };
+        }
+
+        // 4. NEUTRAL (7-9)
+        if (['7','8','9'].includes(card)) {
+            return { val: 0, display: card };
+        }
+
         return null;
     }
 
@@ -308,78 +441,22 @@
         calculateStats();
     }
 
-    function processInput() {
-        const rawInput = cardInput.value;
-        if (!rawInput) return;
-
-        // --- UPDATE LOGIC DI SINI ---
-        // Regex ini pinter: dia nyari '10' duluan, atau single digit 2-9, atau huruf j,q,k,a.
-        // Jadi 'k52a10j' otomatis kepecah jadi: k, 5, 2, a, 10, j
-        const cards = rawInput.match(/(10|[2-9jqka])/gi); 
-        
-        if (!cards) {
-            cardInput.value = ""; // Kalo input sampah doang, clear aja
-            return;
-        }
-
-        let roundRC = 0;
-        let validCount = 0;
-        let logText = "";
-
-        cards.forEach(card => {
-            const val = getCardValue(card);
-            if (val !== null) {
-                runningCount += val;
-                roundRC += val;
-                cardsSeenTotal++;
-                validCount++;
-                logText += card.toUpperCase() + " ";
-            }
-        });
-
-        if (validCount > 0) {
-            let currentDecks = parseFloat(decksInput.value);
-            let newDecks = currentDecks - (validCount / 52);
-            if (newDecks < 0) newDecks = 0;
-            decksInput.value = newDecks.toFixed(2);
-
-            const li = document.createElement("li");
-            li.className = "history-item";
-            li.innerHTML = `
-                <span class="history-cards">${logText}</span>
-                <span>RC Baru: <span class="history-rc">${runningCount}</span></span>
-            `;
-            historyList.appendChild(li); 
-            
-            const logContainer = document.querySelector('.log-container');
-            logContainer.scrollTop = logContainer.scrollHeight;
-
-            totalCardsEl.innerText = cardsSeenTotal;
-            calculateStats();
-        }
-
-        // --- UPDATE FOCUS DI SINI ---
-        cardInput.value = ""; // Kosongin input
-        cardInput.focus();    // Paksa cursor balik ke kotak input
-    }
-
     function resetGame() {
         runningCount = 0;
         cardsSeenTotal = 0;
-        decksInput.value = "6.0";
+        decksInput.value = "8.0";
         rcEl.innerText = "0";
         tcEl.innerText = "0.00";
         totalCardsEl.innerText = "0";
         historyList.innerHTML = "";
-        recBox.innerText = ">> Game Reset. Siap gas!";
+        recBox.innerText = ">> Game Reset";
         recBox.style.backgroundColor = "rgba(255,255,255,0.05)";
         recBox.style.color = "#e2e8f0";
         calculateStats();
-        cardInput.focus(); // Pas reset juga balikin focus
+        cardInput.focus();
     }
 
     calculateStats();
-    // Auto focus pas pertama kali buka
     window.onload = function() {
         cardInput.focus();
     };
