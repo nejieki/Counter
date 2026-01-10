@@ -117,29 +117,52 @@
         /* BUTTON GROUP */
         .btn-group {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
+            grid-template-columns: 1fr 1fr 1fr; /* 3 Kolom */
+            gap: 12px;
         }
 
         .btn-tap {
-            padding: 20px 10px;
+            padding: 15px 5px;
             border-radius: 12px;
-            border: none;
+            
+            /* Border luar tombol (Tebel, sesuai request sebelumnya) */
+            border: 3px solid rgba(0, 0, 0, 0.6); 
+            box-shadow: 0 4px 0 rgba(0,0,0,0.3); 
+
             color: white;
-            font-weight: bold;
-            font-size: 1.1rem;
+            font-weight: 900; 
+            font-size: 1.2rem;
             cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
+            transition: transform 0.1s, box-shadow 0.1s; 
             display: flex;
             flex-direction: column;
             align-items: center;
+
+            /* --- STYLE YOUTUBE SUBTITLE (DROP SHADOW) --- */
+            /* Bayangan hitam jatuh ke kanan bawah, agak soft */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9); 
+            /* --------------------------------------------- */
         }
-        .btn-tap:active { transform: scale(0.95); }
-        .btn-tap span { font-size: 0.8rem; opacity: 0.8; font-weight: normal; }
+        
+        .btn-tap:active { 
+            transform: translateY(3px); 
+            box-shadow: 0 1px 0 rgba(0,0,0,0.3); 
+        }
+        
+        .btn-tap span { 
+            font-size: 0.75rem; 
+            opacity: 1; 
+            font-weight: normal; 
+            margin-top: 4px;
+            /* Sama, style drop shadow juga buat teks kecilnya */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+        }
 
         .btn-low { background-color: var(--accent-green); }
         .btn-mid { background-color: #64748b; }
         .btn-high { background-color: var(--accent-red); }
+        .bg-teal { background-color: #0d9488; } 
+        .bg-orange { background-color: #f97316; }
 
         /* Input Area */
         .input-section {
@@ -195,21 +218,20 @@
             border: 1px solid var(--border-color);
         }
 
-        /* --- SCROLLBAR STYLE YANG BARU (DARK/SUBTLE) --- */
+        /* Scrollbar */
         .log-container::-webkit-scrollbar {
-            width: 8px; /* Lebih tipis biar elegan */
+            width: 8px;
         }
         .log-container::-webkit-scrollbar-track {
-            background: transparent; /* Track bening/gelap */
+            background: transparent;
         }
         .log-container::-webkit-scrollbar-thumb {
-            background-color: #475569; /* Abu-abu gelap (Slate-600) */
+            background-color: #475569;
             border-radius: 4px;
         }
         .log-container::-webkit-scrollbar-thumb:hover {
-            background-color: #64748b; /* Terang dikit pas hover */
+            background-color: #64748b;
         }
-        /* ------------------------------------- */
         
         .log-header {
             font-size: 0.85rem;
@@ -269,19 +291,29 @@
     </div>
 
     <div class="btn-group">
-        <button class="btn-tap btn-low" onclick="tapCard(1, 'LOW')">
-            LOW (-1)<span>(2 - 6)</span>
+        <button class="btn-tap btn-low" onclick="tapCard(1.5, '5 (+1.5)')">
+            +1.5 <span>(5)</span>
         </button>
-        <button class="btn-tap btn-mid" onclick="tapCard(0, 'MID')">
-            MID (0)<span>(7 - 9)</span>
+        <button class="btn-tap btn-low" onclick="tapCard(1, '3,4,6 (+1)')">
+            +1.0 <span>(3, 4, 6)</span>
         </button>
-        <button class="btn-tap btn-high" onclick="tapCard(-1, 'HIGH')">
-            HIGH (+1)<span>(10, Face, A)</span>
+        <button class="btn-tap bg-teal" onclick="tapCard(0.5, '2,7 (+0.5)')">
+            +0.5 <span>(2, 7)</span>
+        </button>
+
+        <button class="btn-tap btn-mid" onclick="tapCard(0, '8 (0)')">
+            0 <span>(8)</span>
+        </button>
+        <button class="btn-tap bg-orange" onclick="tapCard(-0.5, '9 (-0.5)')">
+            -0.5 <span>(9)</span>
+        </button>
+        <button class="btn-tap btn-high" onclick="tapCard(-1, '10,A (-1)')">
+            -1.0 <span>(10,J,Q,K,A)</span>
         </button>
     </div>
 
     <div class="input-section">
-        <input type="text" id="cardInput" placeholder="0 = High, 1 = As" autocomplete="off">
+        <input type="text" id="cardInput" placeholder="Ketik kartu (mis: 5, 9, K, 2)" autocomplete="off">
         <button class="btn-add" onclick="processInput()">Input</button>
     </div>
 
@@ -327,7 +359,7 @@
         li.className = "history-item";
         li.innerHTML = `
             <span class="history-cards">${logLabel}</span>
-            <span>RC: <span class="history-rc">${runningCount}</span></span>
+            <span>RC: <span class="history-rc">${runningCount % 1 === 0 ? runningCount : runningCount.toFixed(1)}</span></span>
         `;
         historyList.appendChild(li); 
         
@@ -343,12 +375,10 @@
         cardInput.focus(); 
     }
 
-    // --- LOGIC KETIK ---
     function processInput() {
         const rawInput = cardInput.value;
         if (!rawInput) return;
 
-        // REGEX BARU:
         // Mencari angka 10, ATAU angka 0, ATAU angka 1-9, ATAU huruf jqka
         const cards = rawInput.match(/(10|[0-9jqka])/gi); 
         
@@ -368,7 +398,7 @@
                 roundRC += result.val;
                 cardsSeenTotal++;
                 validCount++;
-                logText += result.display + " "; // Pake nama display (misal ketik 0 muncul 10)
+                logText += result.display + " "; 
             }
         });
 
@@ -382,7 +412,7 @@
             li.className = "history-item";
             li.innerHTML = `
                 <span class="history-cards">${logText}</span>
-                <span>RC: <span class="history-rc">${runningCount}</span></span>
+                <span>RC: <span class="history-rc">${runningCount % 1 === 0 ? runningCount : runningCount.toFixed(1)}</span></span>
             `;
             historyList.appendChild(li);
             
@@ -397,28 +427,41 @@
         cardInput.focus(); 
     }
 
-    // --- MAPPING SHORTCUT ---
+    // --- MAPPING SHORTCUT (WONG HALVES SYSTEM) ---
     function getCardValue(card) {
         card = card.toLowerCase().trim();
 
-        // 1. INPUT 0 = 10/Face
+        // 1. VALUE +1.5 (Kartu 5)
+        if (card === '5') {
+            return { val: 1.5, display: '5' };
+        }
+
+        // 2. VALUE +1.0 (Kartu 3, 4, 6)
+        if (['3','4','6'].includes(card)) {
+            return { val: 1.0, display: card };
+        }
+
+        // 3. VALUE +0.5 (Kartu 2, 7)
+        if (['2','7'].includes(card)) {
+            return { val: 0.5, display: card };
+        }
+
+        // 4. VALUE 0 (Kartu 8)
+        if (card === '8') {
+            return { val: 0, display: '8' };
+        }
+
+        // 5. VALUE -0.5 (Kartu 9)
+        if (card === '9') {
+            return { val: -0.5, display: '9' };
+        }
+
+        // 6. VALUE -1.0 (10, J, Q, K, A)
         if (card === '0' || card === '10' || ['j','q','k'].includes(card)) {
-            return { val: -1, display: '10' };
+            return { val: -1.0, display: '10' };
         }
-        
-        // 2. INPUT 1 = As (Awas ketuker sama 10 kalo regex salah, tapi regex diatas aman)
         if (card === '1' || card === 'a') {
-            return { val: -1, display: 'A' };
-        }
-
-        // 3. LOW CARDS (2-6)
-        if (['2','3','4','5','6'].includes(card)) {
-            return { val: 1, display: card };
-        }
-
-        // 4. NEUTRAL (7-9)
-        if (['7','8','9'].includes(card)) {
-            return { val: 0, display: card };
+            return { val: -1.0, display: 'A' };
         }
 
         return null;
@@ -430,7 +473,8 @@
 
         const trueCount = runningCount / currentDecks;
 
-        rcEl.innerText = runningCount;
+        // Tampilkan RC dengan 1 desimal jika desimal, bulat jika bulat
+        rcEl.innerText = runningCount % 1 === 0 ? runningCount : runningCount.toFixed(1);
         tcEl.innerText = trueCount.toFixed(2);
 
         if (trueCount >= 1) tcEl.className = "stat-value true-count-val text-green";
